@@ -15,7 +15,7 @@ services:
     volumes:
       - ./data/server:/var/lib/clickhouse
       - ./logs:/var/log/clickhouse-server
-      - ./config/conf.d/:/etc/clickhouse-server/conf.d/
+      - ./config/server/conf.d/:/etc/clickhouse-server/conf.d/
       # - ./config/users.xml:/etc/clickhouse-server/users.xml
     cap_add:
       - SYS_NICE
