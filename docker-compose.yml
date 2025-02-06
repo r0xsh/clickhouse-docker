@@ -15,7 +15,7 @@ services:
     volumes:
       - ./data/server:/var/lib/clickhouse
       - ./logs:/var/log/clickhouse-server
-      - ./config/server/conf.d/:/etc/clickhouse-server/conf.d/
+      - ./config/server/conf.d/:/etc/clickhouse-server/conf.d/:ro
       # - ./config/users.xml:/etc/clickhouse-server/users.xml
     cap_add:
       - SYS_NICE
@@ -23,7 +23,16 @@ services:
       - IPC_LOCK
       - SYS_PTRACE
     depends_on:
-      - clickhouse-keeper
+      clickhouse-keeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--user=${CLICKHOUSE_USERNAME}", "--password=${CLICKHOUSE_PASSWORD}", "--query", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+
 
   clickhouse-keeper:
     image: 'clickhouse/clickhouse-keeper'
@@ -31,9 +40,36 @@ services:
     volumes:
       - ./data/keeper:/var/lib/clickhouse
       - ./logs:/var/log/clickhouse-keeper
-      - ./config/keeper/conf.d/:/etc/clickhouse-keeper/conf.d/
+      - ./config/keeper/conf.d/:/etc/clickhouse-keeper/conf.d/:ro
     cap_add:
       - SYS_NICE
       - NET_ADMIN
       - IPC_LOCK
       - SYS_PTRACE
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'ruok' | nc -w 1 localhost 9181 | grep -q 'imok'"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+
+  cube:
+    image: cubejs/cube:v1.2
+    ports:
+      - 4000:4000
+      - 15432:15432
+    environment:
+      - CUBEJS_DEV_MODE=true
+      - CUBEJS_DB_TYPE=duckdb
+      - CUBEJS_API_SECRET=YourCubeJsApiSecretMustBe256Bits
+      - CUBEJS_DB_TYPE=clickhouse
+      - CUBEJS_DB_HOST=clickhouse-server
+      - CUBEJS_DB_NAME=default
+      - CUBEJS_DB_USER=${CLICKHOUSE_USERNAME}
+      - CUBEJS_DB_PASS=${CLICKHOUSE_PASSWORD}
+      - CUBEJS_DB_CLICKHOUSE_READONLY=true
+    volumes:
+      - ./cube/:/cube/conf/
+    depends_on:
+      clickhouse-server:
+        condition: service_healthy
+
