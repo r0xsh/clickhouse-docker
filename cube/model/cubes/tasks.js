@@ -80,6 +80,7 @@ cube(`tasks`, {
 
   measures: {
     count: {
+      sql: `*`,
       type: `count`
     },
 

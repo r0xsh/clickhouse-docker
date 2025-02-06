@@ -88,6 +88,7 @@ cube(`orders`, {
 
   measures: {
     count: {
+      sql: `*`,
       type: `count`
     },
     total_incl_tax: {
