@@ -81,6 +81,11 @@ cube(`tasks`, {
   measures: {
     count: {
       sql: `*`,
+      type: `count`,
+    },
+
+    count_distinct: {
+      sql: `DISTINCT ${CUBE}.id`,
       type: `count`
     },
 
